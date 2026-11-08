@@ -1,0 +1,66 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.buildpath
+.history
+.settings/
+.project
+.classpath
+.factorypath
+.springBeans
+.sts4-cache/
+
+# IntelliJ IDEA
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# Visual Studio Code
+.vscode/
+
+# Flutter/Dart/Pub specific
+/.dart_tool/
+/.flutter-plugins
+/.flutter-plugins-dependencies
+/.pub-packages/
+/.pub/
+/build/
+
+# Symbol files produced by the build
+app.flx
+app.zip
+*.bin
+*.so
+*.dll
+*.dylib
+
+# Profiling info
+vmservice-snapshot.json
+
+# Flutter web
+/web/canvaskit/
+
+# Signing keys & local environment configuration
+*.jks
+*.keystore
+key.properties
+.env
+
+# Mobile specific
+/ios/Flutter/App.framework
+/ios/Flutter/Flutter.framework
+/ios/Flutter/Flutter.podspec
+/ios/Flutter/Generated.xcconfig
+/ios/Pods/
+/ios/.symlinks/
+/macos/Flutter/Generated.xcconfig
+/macos/Pods/
+/android/key.properties
+/android/.gradle/
+/android/local.properties
+/android/app/build/

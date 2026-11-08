@@ -1,0 +1,48 @@
+# General Section (Metadata)
+name: daftarche
+homepage: https://daftarche.dataist.ir/
+description: "Daftarche: Unified Contact Hub"
+issue_tracker: https://github.com/DataistOS/daftarche/issues
+documentation: https://dpic.dataist.ir/heuristic/_source/category/tools/daftarche.html
+publish_to: 'none'
+version: 0.1.0+1
+
+# Environment
+environment:
+  sdk: ^3.8.1
+
+# Dependencies
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  # Local Packages
+  upupa_dart:
+    path: ../upupa/upupa_dart
+
+  # Ux/Ui
+  # Cupertino Icons
+  cupertino_icons: ^1.0.8
+
+# Development Dependencies
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  # Linter / Code Style
+  flutter_lints: ^5.0.0
+
+# Flutter specific configurations
+flutter:
+  uses-material-design: true
+
+  # Assets & Resources
+  # assets:
+  #   - assets/images/
+  #   - assets/animations/
+
+  # Custom Fonts
+  # fonts:
+  #   - family: Vazir
+  #     fonts:
+  #       - asset: assets/fonts/vazir.ttf
