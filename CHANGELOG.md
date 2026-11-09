@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.1] - 2026-11-09
+
+### Refactor
+- Modularized project architecture by introducing dedicated layers:
+    - Added `ContactService` in `lib/services/` for managing Upupa SDK backend calls.
+    - Moved `ContactsScreen` to `lib/screens/` for cleaner UI management.
+- Streamlined `main.dart` to focus solely on app initialization and global theme configuration.
+
 ## [0.1.0] - 2026-11-08
 
 ### Added
