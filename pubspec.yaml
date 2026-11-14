@@ -5,7 +5,7 @@ description: "Daftarche: Unified Contact Hub"
 issue_tracker: https://github.com/DataistOS/daftarche/issues
 documentation: https://dpic.dataist.ir/heuristic/_source/category/tools/daftarche.html
 publish_to: 'none'
-version: 0.1.1+1
+version: 0.3.0+1
 
 # Environment
 environment:
@@ -15,14 +15,18 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  
+
+  # Localization Support
+  flutter_localizations:
+    sdk: flutter
+
   # Local Packages
   upupa_dart:
     path: ../upupa/upupa_dart
 
-  # Ux/Ui
-  # Cupertino Icons
+  # UX/UI & Utilities
   cupertino_icons: ^1.0.8
+  qr_flutter: ^4.1.0
 
 # Development Dependencies
 dev_dependencies:
@@ -42,7 +46,7 @@ flutter:
   #   - assets/animations/
 
   # Custom Fonts
-  # fonts:
-  #   - family: Vazir
-  #     fonts:
-  #       - asset: assets/fonts/vazir.ttf
+  fonts:
+    - family: Vazirmatn
+      fonts:
+        - asset: assets/fonts/Vazirmatn-Regular.ttf

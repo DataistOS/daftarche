@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.3.0] - 2026-11-14
+
+### Added
+* **Typography & Styling:** Integrated local Vazirmatn font assets to provide high-quality, professional Persian typography.
+* **RTL & Localization:** Added full Right-to-Left (RTL) layout support and global Material/Widgets localization delegates (`fa_IR`).
+* **Digital Business Card:** Implemented vCard generation and QR code sharing (`qr_flutter`) in contact detail views.
+* **UI Components:** Added modular widgets including `ContactCard`, `ContactFormSheet`, and enriched `ContactDetailScreen`.
+
+### Changed
+* **Contact Screens:** Refactored `ContactsListScreen` and `ContactsScreen` for smooth group filtering, fast searching, and favorite toggling.
+* **Services & Models:** Updated `ContactService` and contact data models to handle robust backend data synchronization securely.
+
+### Fixed
+* Resolved strict null-safety and list iterator exceptions (`Bad state: No element`) across UI item builders.
+* Fixed package dependency configurations in `pubspec.yaml` for stable offline and local asset mapping.
+
 ## [0.1.1] - 2026-11-09
 
 ### Refactor
