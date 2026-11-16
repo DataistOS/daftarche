@@ -25,11 +25,13 @@ class ContactDetailScreen extends StatelessWidget {
     if (contact.emails.isNotEmpty) {
       buffer.writeln('EMAIL:${contact.emails.first}');
     }
-    if (contact.company != null && contact.company!.isNotEmpty) {
-      buffer.writeln('ORG:${contact.company}');
+    final company = contact.company;
+    if (company != null && company.isNotEmpty) {
+      buffer.writeln('ORG:$company');
     }
-    if (contact.jobTitle != null && contact.jobTitle!.isNotEmpty) {
-      buffer.writeln('TITLE:${contact.jobTitle}');
+    final jobTitle = contact.jobTitle;
+    if (jobTitle != null && jobTitle.isNotEmpty) {
+      buffer.writeln('TITLE:$jobTitle');
     }
     buffer.writeln('END:VCARD');
     return buffer.toString();
@@ -76,8 +78,76 @@ class ContactDetailScreen extends StatelessWidget {
     );
   }
 
+  void _showAddInteractionDialog(BuildContext context) {
+    final typeController = TextEditingController(text: 'تماس');
+    final descController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('ثبت تعامل جدید'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: typeController,
+              decoration: const InputDecoration(
+                labelText: 'نوع تعامل (مثلاً: تماس، جلسه، دیدار)',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: descController,
+              maxLines: 2,
+              decoration: const InputDecoration(
+                labelText: 'توضیحات و جزئیات',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('لغو'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (descController.text.isNotEmpty) {
+                final newInteraction = InteractionModel(
+                  id: DateTime.now().millisecondsSinceEpoch.toString(),
+                  date: DateTime.now(),
+                  type: typeController.text.trim(),
+                  description: descController.text.trim(),
+                );
+                final updatedInteractions = [
+                  ...contact.interactions,
+                  newInteraction,
+                ];
+                final updatedContact = contact.copyWith(
+                  interactions: updatedInteractions,
+                );
+                onUpdate(updatedContact);
+                Navigator.pop(context);
+              }
+            },
+            child: const Text('ثبت'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final jobTitle = contact.jobTitle;
+    final company = contact.company;
+    final group = contact.group;
+    final address = contact.address;
+    final locationUrl = contact.locationUrl;
+    final notes = contact.notes;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(contact.name),
@@ -115,20 +185,20 @@ class ContactDetailScreen extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                if (contact.jobTitle != null || contact.company != null) ...[
+                if (jobTitle != null || company != null) ...[
                   const SizedBox(height: 4),
                   Text(
                     [
-                      contact.jobTitle,
-                      contact.company,
-                    ].where((e) => e != null && e!.isNotEmpty).join(' در '),
+                      jobTitle,
+                      company,
+                    ].where((e) => e != null && e.isNotEmpty).join(' در '),
                     style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                   ),
                 ],
-                if (contact.group != null && contact.group!.isNotEmpty) ...[
+                if (group != null && group.isNotEmpty) ...[
                   const SizedBox(height: 8),
                   Chip(
-                    label: Text(contact.group!),
+                    label: Text(group),
                     backgroundColor: Colors.teal.shade50,
                     labelStyle: TextStyle(color: Colors.teal.shade800),
                   ),
@@ -150,17 +220,11 @@ class ContactDetailScreen extends StatelessWidget {
               child: ListTile(
                 leading: const Icon(Icons.phone, color: Colors.teal),
                 title: Text(phone, style: const TextStyle(fontSize: 16)),
-                trailing: IconButton(
-                  icon: const Icon(Icons.message, color: Colors.blue),
-                  onPressed: () {},
-                  tooltip: 'ارسال پیام',
-                ),
               ),
             ),
           ),
           const SizedBox(height: 16),
 
-          // بخش ایمیل‌ها
           if (contact.emails.isNotEmpty) ...[
             const Text(
               'ایمیل‌ها',
@@ -171,6 +235,48 @@ class ContactDetailScreen extends StatelessWidget {
               (email) => ListTile(
                 leading: const Icon(Icons.email, color: Colors.teal),
                 title: Text(email),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+
+          if (address != null && address.isNotEmpty) ...[
+            const Text(
+              'آدرس پستی',
+              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.teal),
+            ),
+            const SizedBox(height: 8),
+            Card(
+              elevation: 0,
+              color: Colors.grey[100],
+              child: ListTile(
+                leading: const Icon(Icons.location_on, color: Colors.teal),
+                title: Text(address),
+                subtitle: locationUrl != null && locationUrl.isNotEmpty
+                    ? Text(
+                        locationUrl,
+                        style: TextStyle(color: Colors.blue[700]),
+                      )
+                    : null,
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+
+          if (contact.birthDate != null) ...[
+            const Text(
+              'تاریخ تولد',
+              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.teal),
+            ),
+            const SizedBox(height: 8),
+            Card(
+              elevation: 0,
+              color: Colors.grey[100],
+              child: ListTile(
+                leading: const Icon(Icons.cake, color: Colors.teal),
+                title: Text(
+                  contact.birthDate!.toLocal().toString().split(' ')[0],
+                ),
               ),
             ),
             const SizedBox(height: 16),
@@ -197,9 +303,53 @@ class ContactDetailScreen extends StatelessWidget {
             const SizedBox(height: 16),
           ],
 
-          if (contact.notes != null && contact.notes!.isNotEmpty) ...[
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'تاریخچه تعاملات و یادداشت‌ها',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.teal,
+                ),
+              ),
+              TextButton.icon(
+                onPressed: () => _showAddInteractionDialog(context),
+                icon: const Icon(Icons.add, size: 18),
+                label: const Text('ثبت تعامل'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          if (contact.interactions.isEmpty)
             const Text(
-              'یادداشت‌ها و نکات',
+              'هنوز تعاملی ثبت نشده است.',
+              style: TextStyle(color: Colors.grey, fontSize: 13),
+            )
+          else
+            ...contact.interactions.map(
+              (interaction) => Card(
+                elevation: 0,
+                color: Colors.teal.shade50.withValues(alpha: 0.5),
+                child: ListTile(
+                  leading: const Icon(Icons.history, color: Colors.teal),
+                  title: Text(
+                    interaction.type,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  subtitle: Text(interaction.description),
+                  trailing: Text(
+                    interaction.date.toLocal().toString().split(' ')[0],
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                ),
+              ),
+            ),
+          const SizedBox(height: 16),
+
+          if (notes != null && notes.isNotEmpty) ...[
+            const Text(
+              'یادداشت کلی',
               style: TextStyle(fontWeight: FontWeight.bold, color: Colors.teal),
             ),
             const SizedBox(height: 8),
@@ -210,7 +360,7 @@ class ContactDetailScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(color: Colors.amber.shade200),
               ),
-              child: Text(contact.notes!),
+              child: Text(notes),
             ),
           ],
         ],

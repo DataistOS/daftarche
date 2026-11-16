@@ -107,6 +107,85 @@ class _ContactsScreenState extends State<ContactsScreen> {
     }
   }
 
+  Future<void> _mergeDuplicates() async {
+    try {
+      setState(() => _isLoading = true);
+      final count = await _contactService.mergeDuplicates();
+      await _loadContacts();
+      _showSnackBar('$count مخاطب تکراری با موفقیت ادغام شدند.');
+    } catch (e) {
+      setState(() => _isLoading = false);
+      _showSnackBar(e.toString());
+    }
+  }
+
+  Future<void> _exportBackup() async {
+    try {
+      final jsonStr = await _contactService.exportBackup();
+      if (!mounted) return;
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('پشتیبان اطلاعات (Backup)'),
+          content: SizedBox(
+            width: 400,
+            height: 250,
+            child: SelectableText(jsonStr),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('بستن'),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      _showSnackBar(e.toString());
+    }
+  }
+
+  Future<void> _importBackup() async {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('بازگردانی پشتیبان (Restore)'),
+        content: TextField(
+          controller: controller,
+          maxLines: 5,
+          decoration: const InputDecoration(
+            hintText: 'کد JSON پشتیبان را اینجا وارد کنید...',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('لغو'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              if (controller.text.isNotEmpty) {
+                try {
+                  setState(() => _isLoading = true);
+                  await _contactService.importBackup(controller.text);
+                  await _loadContacts();
+                  _showSnackBar('پشتیبان با موفقیت بازگردانی شد.');
+                } catch (e) {
+                  setState(() => _isLoading = false);
+                  _showSnackBar(e.toString());
+                }
+              }
+            },
+            child: const Text('بازگردانی'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(
       context,
@@ -132,7 +211,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('دفترچه مخاطبین (Pro)'),
+        title: const Text('دفترچه مخاطبین'),
         actions: [
           IconButton(
             icon: Icon(
@@ -146,6 +225,28 @@ class _ContactsScreenState extends State<ContactsScreen> {
               });
             },
             tooltip: 'فقط برگزیده‌ها',
+          ),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert),
+            onSelected: (value) {
+              if (value == 'merge') _mergeDuplicates();
+              if (value == 'export') _exportBackup();
+              if (value == 'import') _importBackup();
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'merge',
+                child: Text('ادغام مخاطبین تکراری'),
+              ),
+              const PopupMenuItem(
+                value: 'export',
+                child: Text('تهیه پشتیبان (JSON)'),
+              ),
+              const PopupMenuItem(
+                value: 'import',
+                child: Text('بازگردانی پشتیبان'),
+              ),
+            ],
           ),
           IconButton(icon: const Icon(Icons.refresh), onPressed: _loadContacts),
         ],
@@ -176,6 +277,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
               ),
             ),
           ),
+
           SizedBox(
             height: 45,
             child: ListView(
@@ -202,6 +304,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
             ),
           ),
           const SizedBox(height: 8),
+
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())

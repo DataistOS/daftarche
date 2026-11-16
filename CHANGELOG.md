@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.4.0] - 2026-11-16
+
+### Added
+- **Backend Integration:** Successfully connected and synchronized the app with the Hodhod backend `daftarche` collection.
+- **Environment Config:** Added `.env` support using `flutter_dotenv` for dynamic `API_URL` management.
+- **Statistics Dashboard:** Integrated live stats for total contacts, favorites, and recorded interactions.
+- **UI Enhancements:**
+  - Global Dark Mode switcher using `ValueNotifier`.
+  - Digital business card (vCard) generation and QR code sharing modal (`qr_flutter`).
+  - Interaction history tracking per contact.
+
+### Changed
+- **Data Handling:** Refactored `ContactModel` and services to use comma-separated plain string storage matching backend schema.
+- **Form Validation:** Improved form state management and robust group validation in `ContactFormSheet`.
+- **Flutter Modernization:** Replaced all deprecated `withOpacity` methods with `.withValues(alpha:)` to prevent precision loss.
+
+### Fixed
+- Resolved 400/404 API request errors by aligning frontend payloads with backend text schemas.
+- Fixed `TypeError`, `AssertionError`, and null-check crashes during contact creation, editing, and card rendering.
+- Fixed `DropdownButtonFormField` crash caused by dynamic or unlisted group values during initialization.
+
 ## [0.3.0] - 2026-11-14
 
 ### Added

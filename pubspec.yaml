@@ -5,7 +5,7 @@ description: "Daftarche: Unified Contact Hub"
 issue_tracker: https://github.com/DataistOS/daftarche/issues
 documentation: https://dpic.dataist.ir/heuristic/_source/category/tools/daftarche.html
 publish_to: 'none'
-version: 0.3.0+1
+version: 0.4.0+1
 
 # Environment
 environment:
@@ -13,39 +13,46 @@ environment:
 
 # Dependencies
 dependencies:
+  # Flutter SDK & Core UI
   flutter:
     sdk: flutter
 
-  # Localization Support
+  # Localization Support (RTL & Persian)
   flutter_localizations:
     sdk: flutter
 
-  # Local Packages
+  # Local Packages (UpUpa Backend Client)
   upupa_dart:
     path: ../upupa/upupa_dart
 
-  # UX/UI & Utilities
+  # Icons & UX Enhancements
   cupertino_icons: ^1.0.8
+
+  # QR Code & Digital Business Card Generation
   qr_flutter: ^4.1.0
+
+  # Environment Variables Management (.env)
+  flutter_dotenv: ^6.0.2
 
 # Development Dependencies
 dev_dependencies:
+  # Flutter Testing Framework
   flutter_test:
     sdk: flutter
 
-  # Linter / Code Style
+  # Official Flutter Linter & Code Style Guidelines
   flutter_lints: ^5.0.0
 
 # Flutter specific configurations
 flutter:
+  # Enable Material Design components
   uses-material-design: true
 
   # Assets & Resources
-  # assets:
-  #   - assets/images/
-  #   - assets/animations/
+  assets:
+    - .env
 
-  # Custom Fonts
+  # Custom Fonts (Vazirmatn for Persian typography)
   fonts:
     - family: Vazirmatn
       fonts:

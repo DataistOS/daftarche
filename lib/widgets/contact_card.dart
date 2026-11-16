@@ -18,8 +18,10 @@ class ContactCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final name = contact.name;
-    final phone = contact.phones.isNotEmpty
+    final name = (contact.name.isNotEmpty) ? contact.name : 'بدون نام';
+    final firstLetter = name.isNotEmpty ? name[0] : '?';
+
+    final phone = (contact.phones.isNotEmpty && contact.phones.first.isNotEmpty)
         ? contact.phones.first
         : 'بدون شماره';
 
@@ -40,7 +42,7 @@ class ContactCard extends StatelessWidget {
         leading: CircleAvatar(
           backgroundColor: Colors.teal.shade100,
           child: Text(
-            name.isNotEmpty ? name[0] : '?',
+            firstLetter,
             style: TextStyle(
               color: Colors.teal.shade800,
               fontWeight: FontWeight.bold,

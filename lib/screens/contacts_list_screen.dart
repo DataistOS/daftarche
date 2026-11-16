@@ -5,6 +5,7 @@ import '../services/contact_service.dart';
 import '../widgets/contact_form_sheet.dart';
 import '../widgets/contact_card.dart';
 import 'contact_detail_screen.dart';
+import '../main.dart';
 
 class ContactsListScreen extends StatefulWidget {
   const ContactsListScreen({super.key});
@@ -122,6 +123,20 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
     );
   }
 
+  Map<String, int> _calculateStats() {
+    int total = _contacts.length;
+    int favorites = _contacts.where((c) => c.isFavorite).length;
+    int totalInteractions = _contacts.fold(
+      0,
+      (sum, c) => sum + c.interactions.length,
+    );
+    return {
+      'total': total,
+      'favorites': favorites,
+      'interactions': totalInteractions,
+    };
+  }
+
   @override
   void dispose() {
     _searchController.dispose();
@@ -131,6 +146,8 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final stats = _calculateStats();
+
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
@@ -141,6 +158,21 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
           ),
           centerTitle: false,
           actions: [
+            IconButton(
+              icon: Icon(
+                themeNotifier.value == ThemeMode.dark
+                    ? Icons.light_mode
+                    : Icons.dark_mode,
+              ),
+              onPressed: () {
+                setState(() {
+                  themeNotifier.value = themeNotifier.value == ThemeMode.dark
+                      ? ThemeMode.light
+                      : ThemeMode.dark;
+                });
+              },
+              tooltip: 'تغییر حالت تم',
+            ),
             IconButton(
               icon: Icon(
                 _showFavoritesOnly ? Icons.star : Icons.star_border,
@@ -163,8 +195,36 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
         ),
         body: Column(
           children: [
+            if (!_isLoading && _contacts.isNotEmpty)
+              Container(
+                margin: const EdgeInsets.all(12.0),
+                padding: const EdgeInsets.all(12.0),
+                decoration: BoxDecoration(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.primaryContainer.withValues(alpha: 0.4),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.primary.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _buildStatItem('کل مخاطبین', '${stats['total']}'),
+                    _buildStatItem('برگزیده‌ها', '${stats['favorites']}'),
+                    _buildStatItem(
+                      'تعاملات ثبت‌شده',
+                      '${stats['interactions']}',
+                    ),
+                  ],
+                ),
+              ),
+
             Padding(
-              padding: const EdgeInsets.all(12.0),
+              padding: const EdgeInsets.symmetric(horizontal: 12.0),
               child: TextField(
                 controller: _searchController,
                 decoration: InputDecoration(
@@ -183,10 +243,11 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   filled: true,
-                  fillColor: Colors.grey[100],
+                  fillColor: Theme.of(context).cardColor,
                 ),
               ),
             ),
+            const SizedBox(height: 8),
 
             SizedBox(
               height: 45,
@@ -250,6 +311,20 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
           child: const Icon(Icons.add),
         ),
       ),
+    );
+  }
+
+  Widget _buildStatItem(String label, String value) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          value,
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 2),
+        Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+      ],
     );
   }
 }

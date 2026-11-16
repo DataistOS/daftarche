@@ -24,9 +24,12 @@ class _ContactFormSheetState extends State<ContactFormSheet> {
   late TextEditingController _companyController;
   late TextEditingController _jobTitleController;
   late TextEditingController _emailController;
+  late TextEditingController _addressController;
+  late TextEditingController _locationUrlController;
   late TextEditingController _tagsController;
   late TextEditingController _notesController;
 
+  DateTime? _selectedBirthDate;
   String? _selectedGroup;
   final List<String> _predefinedGroups = [
     'خانواده',
@@ -48,9 +51,18 @@ class _ContactFormSheetState extends State<ContactFormSheet> {
     _emailController = TextEditingController(
       text: c?.emails.isNotEmpty == true ? c!.emails.first : '',
     );
+    _addressController = TextEditingController(text: c?.address ?? '');
+    _locationUrlController = TextEditingController(text: c?.locationUrl ?? '');
     _tagsController = TextEditingController(text: c?.tags.join(', ') ?? '');
     _notesController = TextEditingController(text: c?.notes ?? '');
-    _selectedGroup = c?.group;
+
+    if (c?.group != null && _predefinedGroups.contains(c!.group)) {
+      _selectedGroup = c.group;
+    } else {
+      _selectedGroup = null;
+    }
+
+    _selectedBirthDate = c?.birthDate;
   }
 
   @override
@@ -60,9 +72,25 @@ class _ContactFormSheetState extends State<ContactFormSheet> {
     _companyController.dispose();
     _jobTitleController.dispose();
     _emailController.dispose();
+    _addressController.dispose();
+    _locationUrlController.dispose();
     _tagsController.dispose();
     _notesController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickBirthDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedBirthDate ?? DateTime(1990, 1, 1),
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+    );
+    if (picked != null) {
+      setState(() {
+        _selectedBirthDate = picked;
+      });
+    }
   }
 
   void _submit() {
@@ -86,13 +114,20 @@ class _ContactFormSheetState extends State<ContactFormSheet> {
         jobTitle: _jobTitleController.text.isNotEmpty
             ? _jobTitleController.text.trim()
             : null,
+        address: _addressController.text.isNotEmpty
+            ? _addressController.text.trim()
+            : null,
+        locationUrl: _locationUrlController.text.isNotEmpty
+            ? _locationUrlController.text.trim()
+            : null,
+        birthDate: _selectedBirthDate,
         group: _selectedGroup,
         tags: tagsList,
         notes: _notesController.text.isNotEmpty
             ? _notesController.text.trim()
             : null,
-        // ذخیره یادداشت
         isFavorite: widget.initialContact?.isFavorite ?? false,
+        interactions: widget.initialContact?.interactions ?? [],
       );
 
       widget.onSave(updatedContact);
@@ -181,6 +216,39 @@ class _ContactFormSheetState extends State<ContactFormSheet> {
                   labelText: 'ایمیل',
                   border: OutlineInputBorder(),
                 ),
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _addressController,
+                decoration: const InputDecoration(
+                  labelText: 'آدرس پستی',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _locationUrlController,
+                decoration: const InputDecoration(
+                  labelText: 'لینک نقشه (Location URL)',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      _selectedBirthDate == null
+                          ? 'تاریخ تولد انتخاب نشده است'
+                          : 'تاریخ تولد: ${_selectedBirthDate!.toLocal().toString().split(' ')[0]}',
+                    ),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: _pickBirthDate,
+                    icon: const Icon(Icons.calendar_today),
+                    label: const Text('انتخاب تاریخ'),
+                  ),
+                ],
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(

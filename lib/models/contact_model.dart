@@ -1,4 +1,35 @@
 // lib/models/contact_model.dart
+class InteractionModel {
+  final String id;
+  final DateTime date;
+  final String type;
+  final String description;
+
+  InteractionModel({
+    required this.id,
+    required this.date,
+    required this.type,
+    required this.description,
+  });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'date': date.toIso8601String(),
+      'type': type,
+      'description': description,
+    };
+  }
+
+  factory InteractionModel.fromMap(Map<String, dynamic> map) {
+    return InteractionModel(
+      id: map['id'] ?? '',
+      date: map['date'] != null ? DateTime.parse(map['date']) : DateTime.now(),
+      type: map['type'] ?? '',
+      description: map['description'] ?? '',
+    );
+  }
+}
 
 class ContactModel {
   final String id;
@@ -10,11 +41,11 @@ class ContactModel {
   final String? address;
   final String? locationUrl;
   final DateTime? birthDate;
-  final Map<String, String> socialLinks;
   final String? group;
   final List<String> tags;
   final String? notes;
   final bool isFavorite;
+  final List<InteractionModel> interactions;
 
   ContactModel({
     required this.id,
@@ -26,55 +57,66 @@ class ContactModel {
     this.address,
     this.locationUrl,
     this.birthDate,
-    this.socialLinks = const {},
     this.group,
     this.tags = const [],
     this.notes,
     this.isFavorite = false,
-  }) : assert(phones.isNotEmpty, 'At least one phone number is required.');
-
-  factory ContactModel.fromMap(String id, Map<String, dynamic> data) {
-    return ContactModel(
-      id: id,
-      name: data['name'] ?? 'بدون نام',
-      phones: List<String>.from(
-        data['phones'] ?? (data['phone'] != null ? [data['phone']] : []),
-      ),
-      emails: List<String>.from(data['emails'] ?? []),
-      company: data['company'],
-      jobTitle: data['job_title'],
-      address: data['address'],
-      locationUrl: data['location_url'],
-      birthDate: data['birth_date'] != null
-          ? DateTime.tryParse(data['birth_date'])
-          : null,
-      socialLinks: Map<String, String>.from(data['social_links'] ?? {}),
-      group: data['group'],
-      tags: List<String>.from(data['tags'] ?? []),
-      notes: data['notes'],
-      isFavorite: data['is_favorite'] ?? false,
-    );
-  }
+    this.interactions = const [],
+  });
 
   Map<String, dynamic> toMap() {
     return {
       'name': name,
-      'phones': phones,
-      'emails': emails,
+      'phones': phones.join(','),
+      'emails': emails.join(','),
       'company': company,
-      'job_title': jobTitle,
+      'jobTitle': jobTitle,
       'address': address,
-      'location_url': locationUrl,
-      'birth_date': birthDate?.toIso8601String(),
-      'social_links': socialLinks,
+      'locationUrl': locationUrl,
+      'birthDate': birthDate?.toIso8601String(),
       'group': group,
-      'tags': tags,
+      'tags': tags.join(','),
       'notes': notes,
-      'is_favorite': isFavorite,
+      'isFavorite': isFavorite,
     };
   }
 
+  factory ContactModel.fromMap(String id, Map<String, dynamic> map) {
+    List<String> parseStringToList(dynamic val) {
+      if (val == null) return [];
+      if (val is List) return val.map((e) => e.toString()).toList();
+      if (val is String && val.isNotEmpty) {
+        return val
+            .split(',')
+            .map((e) => e.trim())
+            .where((e) => e.isNotEmpty)
+            .toList();
+      }
+      return [];
+    }
+
+    return ContactModel(
+      id: id,
+      name: map['name'] ?? '',
+      phones: parseStringToList(map['phones']),
+      emails: parseStringToList(map['emails']),
+      company: map['company'],
+      jobTitle: map['jobTitle'],
+      address: map['address'],
+      locationUrl: map['locationUrl'],
+      birthDate: map['birthDate'] != null
+          ? DateTime.tryParse(map['birthDate'])
+          : null,
+      group: map['group'],
+      tags: parseStringToList(map['tags']),
+      notes: map['notes'],
+      isFavorite: map['isFavorite'] ?? false,
+      interactions: [],
+    );
+  }
+
   ContactModel copyWith({
+    String? id,
     String? name,
     List<String>? phones,
     List<String>? emails,
@@ -83,14 +125,14 @@ class ContactModel {
     String? address,
     String? locationUrl,
     DateTime? birthDate,
-    Map<String, String>? socialLinks,
     String? group,
     List<String>? tags,
     String? notes,
     bool? isFavorite,
+    List<InteractionModel>? interactions,
   }) {
     return ContactModel(
-      id: id,
+      id: id ?? this.id,
       name: name ?? this.name,
       phones: phones ?? this.phones,
       emails: emails ?? this.emails,
@@ -99,11 +141,11 @@ class ContactModel {
       address: address ?? this.address,
       locationUrl: locationUrl ?? this.locationUrl,
       birthDate: birthDate ?? this.birthDate,
-      socialLinks: socialLinks ?? this.socialLinks,
       group: group ?? this.group,
       tags: tags ?? this.tags,
       notes: notes ?? this.notes,
       isFavorite: isFavorite ?? this.isFavorite,
+      interactions: interactions ?? this.interactions,
     );
   }
 }
