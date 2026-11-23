@@ -1,13 +1,28 @@
 // lib/services/contact_service.dart
 import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:http/http.dart' as http;
 import 'package:upupa_dart/upupa_dart.dart';
 import '../models/contact_model.dart';
 
 class ContactService {
-  final UpupaClient client = UpupaClient(
-    dotenv.env['API_URL'] ?? 'http://127.0.0.1:8090',
-  );
+  final String _baseUrl = dotenv.env['API_URL'] ?? 'http://127.0.0.1:8090';
+  final UpupaClient client;
+  final http.Client _httpClient;
+
+  ContactService({UpupaClient? client, http.Client? httpClient})
+    : client =
+          client ??
+          UpupaClient(dotenv.env['API_URL'] ?? 'http://127.0.0.1:8090'),
+      _httpClient = httpClient ?? http.Client();
+
+  Map<String, String> _buildHeaders() {
+    final headers = <String, String>{'Content-Type': 'application/json'};
+    if (client.authStore.isValid && client.authStore.token != null) {
+      headers['Authorization'] = 'Bearer ${client.authStore.token}';
+    }
+    return headers;
+  }
 
   Future<List<ContactModel>> fetchContacts() async {
     try {
@@ -30,7 +45,25 @@ class ContactService {
 
   Future<void> updateContact(ContactModel contact) async {
     try {
-      await client.records.update('daftarche', contact.id, contact.toMap());
+      final uri = Uri.parse(
+        '$_baseUrl/api/v1/collections/daftarche/records/${contact.id}',
+      );
+      final payload = jsonEncode({'data': contact.toMap()});
+      final headers = _buildHeaders();
+
+      var response = await _httpClient.patch(
+        uri,
+        headers: headers,
+        body: payload,
+      );
+
+      if (response.statusCode == 405) {
+        response = await _httpClient.put(uri, headers: headers, body: payload);
+      }
+
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw 'خطای سرور (${response.statusCode}): ${response.body}';
+      }
     } catch (e) {
       throw 'خطا در به‌روزرسانی مخاطب: $e';
     }
@@ -121,6 +154,7 @@ class ContactService {
   }
 
   void dispose() {
+    _httpClient.close();
     client.dispose();
   }
 }

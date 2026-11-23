@@ -5,7 +5,7 @@ description: "Daftarche: Unified Contact Hub"
 issue_tracker: https://github.com/DataistOS/daftarche/issues
 documentation: https://dpic.dataist.ir/heuristic/_source/category/tools/daftarche.html
 publish_to: 'none'
-version: 0.4.0+1
+version: 0.4.1+1
 
 # Environment
 environment:
@@ -21,9 +21,10 @@ dependencies:
   flutter_localizations:
     sdk: flutter
 
-  # Local Packages (UpUpa Backend Client)
+  # Networking & Backend Client (UpUpa API & Direct HTTP Requests)
   upupa_dart:
     path: ../upupa/upupa_dart
+  http: ^1.6.0
 
   # Icons & UX Enhancements
   cupertino_icons: ^1.0.8

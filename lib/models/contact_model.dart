@@ -1,4 +1,6 @@
 // lib/models/contact_model.dart
+import 'dart:convert';
+
 class InteractionModel {
   final String id;
   final DateTime date;
@@ -23,10 +25,12 @@ class InteractionModel {
 
   factory InteractionModel.fromMap(Map<String, dynamic> map) {
     return InteractionModel(
-      id: map['id'] ?? '',
-      date: map['date'] != null ? DateTime.parse(map['date']) : DateTime.now(),
-      type: map['type'] ?? '',
-      description: map['description'] ?? '',
+      id: map['id']?.toString() ?? '',
+      date: map['date'] != null
+          ? (DateTime.tryParse(map['date'].toString()) ?? DateTime.now())
+          : DateTime.now(),
+      type: map['type']?.toString() ?? '',
+      description: map['description']?.toString() ?? '',
     );
   }
 }
@@ -66,22 +70,27 @@ class ContactModel {
 
   Map<String, dynamic> toMap() {
     return {
-      'name': name,
-      'phones': phones.join(','),
-      'emails': emails.join(','),
-      'company': company,
-      'jobTitle': jobTitle,
-      'address': address,
-      'locationUrl': locationUrl,
-      'birthDate': birthDate?.toIso8601String(),
-      'group': group,
-      'tags': tags.join(','),
-      'notes': notes,
-      'isFavorite': isFavorite,
+      'Name': name,
+      'Phones': phones.join(','),
+      'Emails': emails.join(','),
+      'Company': company ?? '',
+      'Jobtitle': jobTitle ?? '',
+      'Address': address ?? '',
+      'Locationurl': locationUrl ?? '',
+      'Birthdate': birthDate?.toIso8601String() ?? '',
+      'Group': group ?? '',
+      'Tags': tags.join(','),
+      'Notes': notes ?? '',
+      'Isfavorite': isFavorite,
+      'Interactions': jsonEncode(interactions.map((e) => e.toMap()).toList()),
     };
   }
 
   factory ContactModel.fromMap(String id, Map<String, dynamic> map) {
+    dynamic readField(String pascalKey, String camelKey) {
+      return map.containsKey(pascalKey) ? map[pascalKey] : map[camelKey];
+    }
+
     List<String> parseStringToList(dynamic val) {
       if (val == null) return [];
       if (val is List) return val.map((e) => e.toString()).toList();
@@ -95,23 +104,51 @@ class ContactModel {
       return [];
     }
 
+    bool parseBool(dynamic val) {
+      if (val is bool) return val;
+      if (val is String) return val.toLowerCase() == 'true' || val == '1';
+      if (val is num) return val != 0;
+      return false;
+    }
+
+    List<InteractionModel> parseInteractions(dynamic val) {
+      if (val == null) return [];
+      try {
+        final decoded = val is String ? jsonDecode(val) : val;
+        if (decoded is List) {
+          return decoded
+              .whereType()
+              .map(
+                (item) =>
+                    InteractionModel.fromMap(Map<String, dynamic>.from(item)),
+              )
+              .toList();
+        }
+      } catch (_) {}
+      return [];
+    }
+
+    final rawBirthDate = readField('Birthdate', 'birthDate');
+
     return ContactModel(
       id: id,
-      name: map['name'] ?? '',
-      phones: parseStringToList(map['phones']),
-      emails: parseStringToList(map['emails']),
-      company: map['company'],
-      jobTitle: map['jobTitle'],
-      address: map['address'],
-      locationUrl: map['locationUrl'],
-      birthDate: map['birthDate'] != null
-          ? DateTime.tryParse(map['birthDate'])
+      name: readField('Name', 'name')?.toString() ?? '',
+      phones: parseStringToList(readField('Phones', 'phones')),
+      emails: parseStringToList(readField('Emails', 'emails')),
+      company: readField('Company', 'company')?.toString(),
+      jobTitle: readField('Jobtitle', 'jobTitle')?.toString(),
+      address: readField('Address', 'address')?.toString(),
+      locationUrl: readField('Locationurl', 'locationUrl')?.toString(),
+      birthDate: rawBirthDate != null && rawBirthDate.toString().isNotEmpty
+          ? DateTime.tryParse(rawBirthDate.toString())
           : null,
-      group: map['group'],
-      tags: parseStringToList(map['tags']),
-      notes: map['notes'],
-      isFavorite: map['isFavorite'] ?? false,
-      interactions: [],
+      group: readField('Group', 'group')?.toString(),
+      tags: parseStringToList(readField('Tags', 'tags')),
+      notes: readField('Notes', 'notes')?.toString(),
+      isFavorite: parseBool(readField('Isfavorite', 'isFavorite')),
+      interactions: parseInteractions(
+        readField('Interactions', 'interactions'),
+      ),
     );
   }
 
