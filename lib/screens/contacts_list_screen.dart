@@ -40,22 +40,25 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
   }
 
   Future<void> _loadContacts() async {
+    if (!mounted) return;
     setState(() => _isLoading = true);
     try {
       final contacts = await _contactService.fetchContacts();
+      if (!mounted) return;
       setState(() {
         _contacts = contacts;
         _filterContacts();
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() => _isLoading = false);
       _showSnackBar(e.toString());
     }
   }
 
   void _filterContacts() {
-    final query = _searchController.text.toLowerCase();
+    final query = _searchController.text.trim().toLowerCase();
     setState(() {
       _filteredContacts = _contacts.where((contact) {
         if (_showFavoritesOnly && !contact.isFavorite) return false;
@@ -64,12 +67,16 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
           if (contact.group != _selectedGroupFilter) return false;
         }
 
+        if (query.isEmpty) return true;
+
         final nameMatch = contact.name.toLowerCase().contains(query);
+        final finglishMatch =
+            contact.finglish?.toLowerCase().contains(query) ?? false;
         final companyMatch =
             contact.company?.toLowerCase().contains(query) ?? false;
         final phoneMatch = contact.phones.any((p) => p.contains(query));
 
-        return nameMatch || companyMatch || phoneMatch;
+        return nameMatch || finglishMatch || companyMatch || phoneMatch;
       }).toList();
     });
   }
@@ -83,7 +90,7 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
         await _contactService.updateContact(contact);
         _showSnackBar('مخاطب به‌روزرسانی شد.');
       }
-      _loadContacts();
+      await _loadContacts();
     } catch (e) {
       _showSnackBar(e.toString());
     }
@@ -92,7 +99,7 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
   Future<void> _handleDeleteContact(String recordId) async {
     try {
       await _contactService.deleteContact(recordId);
-      _loadContacts();
+      await _loadContacts();
       _showSnackBar('مخاطب حذف شد.');
     } catch (e) {
       _showSnackBar(e.toString());
@@ -103,13 +110,14 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
     final updated = contact.copyWith(isFavorite: !contact.isFavorite);
     try {
       await _contactService.updateContact(updated);
-      _loadContacts();
+      await _loadContacts();
     } catch (e) {
       _showSnackBar(e.toString());
     }
   }
 
   void _showSnackBar(String message) {
+    if (!mounted) return;
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
@@ -213,9 +221,14 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    _buildStatItem('کل مخاطبین', '${stats['total']}'),
-                    _buildStatItem('برگزیده‌ها', '${stats['favorites']}'),
+                    _buildStatItem(context, 'کل مخاطبین', '${stats['total']}'),
                     _buildStatItem(
+                      context,
+                      'برگزیده‌ها',
+                      '${stats['favorites']}',
+                    ),
+                    _buildStatItem(
+                      context,
                       'تعاملات ثبت‌شده',
                       '${stats['interactions']}',
                     ),
@@ -228,7 +241,7 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
               child: TextField(
                 controller: _searchController,
                 decoration: InputDecoration(
-                  hintText: 'جستجو بر اساس نام، شرکت یا شماره...',
+                  hintText: 'جستجو بر اساس نام، فینگلیش، شرکت یا شماره...',
                   prefixIcon: const Icon(Icons.search),
                   suffixIcon: _searchController.text.isNotEmpty
                       ? IconButton(
@@ -314,7 +327,7 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
     );
   }
 
-  Widget _buildStatItem(String label, String value) {
+  Widget _buildStatItem(BuildContext context, String label, String value) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -323,7 +336,13 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 2),
-        Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
       ],
     );
   }

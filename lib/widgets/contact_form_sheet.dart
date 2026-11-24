@@ -20,6 +20,8 @@ class _ContactFormSheetState extends State<ContactFormSheet> {
   final _formKey = GlobalKey<FormState>();
 
   late TextEditingController _nameController;
+  late TextEditingController _finglishController;
+  late TextEditingController _avatarPathController;
   late TextEditingController _phoneController;
   late TextEditingController _companyController;
   late TextEditingController _jobTitleController;
@@ -31,11 +33,17 @@ class _ContactFormSheetState extends State<ContactFormSheet> {
 
   DateTime? _selectedBirthDate;
   String? _selectedGroup;
-  final List<String> _predefinedGroups = [
+  late List<String> _groupOptions;
+
+  static const List<String> _predefinedGroups = [
     'خانواده',
     'دوستان',
     'همکاران',
     'مشتریان VIP',
+    'تست',
+    'مشاوران',
+    'مشتریان',
+    'زیرساخت',
   ];
 
   @override
@@ -43,6 +51,8 @@ class _ContactFormSheetState extends State<ContactFormSheet> {
     super.initState();
     final c = widget.initialContact;
     _nameController = TextEditingController(text: c?.name ?? '');
+    _finglishController = TextEditingController(text: c?.finglish ?? '');
+    _avatarPathController = TextEditingController(text: c?.avatarPath ?? '');
     _phoneController = TextEditingController(
       text: c?.phones.isNotEmpty == true ? c!.phones.first : '',
     );
@@ -56,8 +66,13 @@ class _ContactFormSheetState extends State<ContactFormSheet> {
     _tagsController = TextEditingController(text: c?.tags.join(', ') ?? '');
     _notesController = TextEditingController(text: c?.notes ?? '');
 
-    if (c?.group != null && _predefinedGroups.contains(c!.group)) {
-      _selectedGroup = c.group;
+    _groupOptions = List<String>.from(_predefinedGroups);
+    final currentGroup = c?.group?.trim();
+    if (currentGroup != null && currentGroup.isNotEmpty) {
+      if (!_groupOptions.contains(currentGroup)) {
+        _groupOptions.add(currentGroup);
+      }
+      _selectedGroup = currentGroup;
     } else {
       _selectedGroup = null;
     }
@@ -68,6 +83,8 @@ class _ContactFormSheetState extends State<ContactFormSheet> {
   @override
   void dispose() {
     _nameController.dispose();
+    _finglishController.dispose();
+    _avatarPathController.dispose();
     _phoneController.dispose();
     _companyController.dispose();
     _jobTitleController.dispose();
@@ -104,26 +121,32 @@ class _ContactFormSheetState extends State<ContactFormSheet> {
       final updatedContact = ContactModel(
         id: widget.initialContact?.id ?? '',
         name: _nameController.text.trim(),
+        finglish: _finglishController.text.trim().isNotEmpty
+            ? _finglishController.text.trim()
+            : null,
+        avatarPath: _avatarPathController.text.trim().isNotEmpty
+            ? _avatarPathController.text.trim()
+            : null,
         phones: [_phoneController.text.trim()],
-        emails: _emailController.text.isNotEmpty
+        emails: _emailController.text.trim().isNotEmpty
             ? [_emailController.text.trim()]
             : [],
-        company: _companyController.text.isNotEmpty
+        company: _companyController.text.trim().isNotEmpty
             ? _companyController.text.trim()
             : null,
-        jobTitle: _jobTitleController.text.isNotEmpty
+        jobTitle: _jobTitleController.text.trim().isNotEmpty
             ? _jobTitleController.text.trim()
             : null,
-        address: _addressController.text.isNotEmpty
+        address: _addressController.text.trim().isNotEmpty
             ? _addressController.text.trim()
             : null,
-        locationUrl: _locationUrlController.text.isNotEmpty
+        locationUrl: _locationUrlController.text.trim().isNotEmpty
             ? _locationUrlController.text.trim()
             : null,
         birthDate: _selectedBirthDate,
         group: _selectedGroup,
         tags: tagsList,
-        notes: _notesController.text.isNotEmpty
+        notes: _notesController.text.trim().isNotEmpty
             ? _notesController.text.trim()
             : null,
         isFavorite: widget.initialContact?.isFavorite ?? false,
@@ -131,12 +154,16 @@ class _ContactFormSheetState extends State<ContactFormSheet> {
       );
 
       widget.onSave(updatedContact);
-      Navigator.pop(context);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final subtleTextColor = isDark
+        ? Colors.grey.shade300
+        : Colors.grey.shade700;
+
     return Padding(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom + 20,
@@ -171,6 +198,14 @@ class _ContactFormSheetState extends State<ContactFormSheet> {
                 validator: (val) => val == null || val.trim().isEmpty
                     ? 'لطفاً نام را وارد کنید'
                     : null,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _finglishController,
+                decoration: const InputDecoration(
+                  labelText: 'نام فینگلیش (Finglish)',
+                  border: OutlineInputBorder(),
+                ),
               ),
               const SizedBox(height: 12),
               TextFormField(
@@ -234,6 +269,14 @@ class _ContactFormSheetState extends State<ContactFormSheet> {
                 ),
               ),
               const SizedBox(height: 12),
+              TextFormField(
+                controller: _avatarPathController,
+                decoration: const InputDecoration(
+                  labelText: 'مسیر یا لینک تصویر پروفایل (Avatar Path)',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
               Row(
                 children: [
                   Expanded(
@@ -241,6 +284,7 @@ class _ContactFormSheetState extends State<ContactFormSheet> {
                       _selectedBirthDate == null
                           ? 'تاریخ تولد انتخاب نشده است'
                           : 'تاریخ تولد: ${_selectedBirthDate!.toLocal().toString().split(' ')[0]}',
+                      style: TextStyle(color: subtleTextColor),
                     ),
                   ),
                   OutlinedButton.icon(
@@ -257,7 +301,7 @@ class _ContactFormSheetState extends State<ContactFormSheet> {
                   labelText: 'گروه مخاطب',
                   border: OutlineInputBorder(),
                 ),
-                items: _predefinedGroups.map((group) {
+                items: _groupOptions.map((group) {
                   return DropdownMenuItem(value: group, child: Text(group));
                 }).toList(),
                 onChanged: (val) {

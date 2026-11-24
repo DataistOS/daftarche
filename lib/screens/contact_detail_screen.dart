@@ -1,5 +1,7 @@
 // lib/screens/contact_detail_screen.dart
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../models/contact_model.dart';
 import '../widgets/contact_form_sheet.dart';
@@ -45,7 +47,9 @@ class ContactDetailScreen extends StatelessWidget {
         initialContact: contact,
         onSave: (updatedContact) {
           onUpdate(updatedContact);
-          Navigator.pop(context);
+          if (Navigator.canPop(context)) {
+            Navigator.pop(context);
+          }
         },
       ),
     );
@@ -139,8 +143,63 @@ class ContactDetailScreen extends StatelessWidget {
     );
   }
 
+  ImageProvider? _resolveAvatarImage() {
+    final path = contact.avatarPath?.trim();
+    if (path == null || path.isEmpty) return null;
+
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      return NetworkImage(path);
+    }
+
+    final file = File(path);
+    if (file.existsSync()) {
+      return FileImage(file);
+    }
+
+    final baseUrl = dotenv.env['UPUPA_BASE_URL'] ?? dotenv.env['API_BASE_URL'];
+    if (baseUrl != null && baseUrl.trim().isNotEmpty) {
+      final normalizedBase = baseUrl.trim().replaceAll(RegExp(r'/+$'), '');
+      final normalizedPath = path.replaceAll(RegExp(r'^/+'), '');
+      return NetworkImage('$normalizedBase/$normalizedPath');
+    }
+
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBgColor = isDark ? const Color(0xFF1E2926) : Colors.grey.shade100;
+    final cardTextColor = isDark ? Colors.white : Colors.black87;
+    final subtleTextColor = isDark
+        ? Colors.grey.shade300
+        : Colors.grey.shade700;
+
+    final groupBgColor = isDark
+        ? Colors.teal.shade900.withValues(alpha: 0.6)
+        : Colors.teal.shade50;
+    final groupTextColor = isDark ? Colors.teal.shade200 : Colors.teal.shade900;
+
+    final tagBgColor = isDark
+        ? Colors.blue.shade900.withValues(alpha: 0.5)
+        : Colors.blue.shade50;
+    final tagTextColor = isDark ? Colors.blue.shade200 : Colors.blue.shade900;
+
+    final interactionBgColor = isDark
+        ? Colors.teal.shade900.withValues(alpha: 0.35)
+        : Colors.teal.shade50.withValues(alpha: 0.5);
+
+    final noteBgColor = isDark
+        ? Colors.amber.shade900.withValues(alpha: 0.3)
+        : Colors.amber.shade50;
+    final noteBorderColor = isDark
+        ? Colors.amber.shade700.withValues(alpha: 0.5)
+        : Colors.amber.shade200;
+    final noteTextColor = isDark ? Colors.amber.shade100 : Colors.black87;
+
+    final finglish = contact.finglish;
+    final avatarPath = contact.avatarPath;
+    final avatarImage = _resolveAvatarImage();
     final jobTitle = contact.jobTitle;
     final company = contact.company;
     final group = contact.group;
@@ -172,10 +231,13 @@ class ContactDetailScreen extends StatelessWidget {
               children: [
                 CircleAvatar(
                   radius: 40,
-                  child: Text(
-                    contact.name.isNotEmpty ? contact.name[0] : '?',
-                    style: const TextStyle(fontSize: 32),
-                  ),
+                  backgroundImage: avatarImage,
+                  child: avatarImage == null
+                      ? Text(
+                          contact.name.isNotEmpty ? contact.name[0] : '?',
+                          style: const TextStyle(fontSize: 32),
+                        )
+                      : null,
                 ),
                 const SizedBox(height: 12),
                 Text(
@@ -185,6 +247,13 @@ class ContactDetailScreen extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
+                if (finglish != null && finglish.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    finglish,
+                    style: TextStyle(fontSize: 13, color: subtleTextColor),
+                  ),
+                ],
                 if (jobTitle != null || company != null) ...[
                   const SizedBox(height: 4),
                   Text(
@@ -192,15 +261,15 @@ class ContactDetailScreen extends StatelessWidget {
                       jobTitle,
                       company,
                     ].where((e) => e != null && e.isNotEmpty).join(' در '),
-                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                    style: TextStyle(fontSize: 14, color: subtleTextColor),
                   ),
                 ],
                 if (group != null && group.isNotEmpty) ...[
                   const SizedBox(height: 8),
                   Chip(
                     label: Text(group),
-                    backgroundColor: Colors.teal.shade50,
-                    labelStyle: TextStyle(color: Colors.teal.shade800),
+                    backgroundColor: groupBgColor,
+                    labelStyle: TextStyle(color: groupTextColor),
                   ),
                 ],
               ],
@@ -216,10 +285,13 @@ class ContactDetailScreen extends StatelessWidget {
           ...contact.phones.map(
             (phone) => Card(
               elevation: 0,
-              color: Colors.grey[100],
+              color: cardBgColor,
               child: ListTile(
                 leading: const Icon(Icons.phone, color: Colors.teal),
-                title: Text(phone, style: const TextStyle(fontSize: 16)),
+                title: Text(
+                  phone,
+                  style: TextStyle(fontSize: 16, color: cardTextColor),
+                ),
               ),
             ),
           ),
@@ -234,28 +306,38 @@ class ContactDetailScreen extends StatelessWidget {
             ...contact.emails.map(
               (email) => ListTile(
                 leading: const Icon(Icons.email, color: Colors.teal),
-                title: Text(email),
+                title: Text(email, style: TextStyle(color: cardTextColor)),
               ),
             ),
             const SizedBox(height: 16),
           ],
 
-          if (address != null && address.isNotEmpty) ...[
+          if ((address != null && address.isNotEmpty) ||
+              (locationUrl != null && locationUrl.isNotEmpty)) ...[
             const Text(
-              'آدرس پستی',
+              'آدرس پستی و نقشه',
               style: TextStyle(fontWeight: FontWeight.bold, color: Colors.teal),
             ),
             const SizedBox(height: 8),
             Card(
               elevation: 0,
-              color: Colors.grey[100],
+              color: cardBgColor,
               child: ListTile(
                 leading: const Icon(Icons.location_on, color: Colors.teal),
-                title: Text(address),
-                subtitle: locationUrl != null && locationUrl.isNotEmpty
-                    ? Text(
+                title: Text(
+                  (address != null && address.isNotEmpty)
+                      ? address
+                      : 'لینک موقعیت مکانی',
+                  style: TextStyle(color: cardTextColor),
+                ),
+                subtitle: (locationUrl != null && locationUrl.isNotEmpty)
+                    ? SelectableText(
                         locationUrl,
-                        style: TextStyle(color: Colors.blue[700]),
+                        style: TextStyle(
+                          color: isDark
+                              ? Colors.lightBlue.shade300
+                              : Colors.blue.shade700,
+                        ),
                       )
                     : null,
               ),
@@ -271,11 +353,32 @@ class ContactDetailScreen extends StatelessWidget {
             const SizedBox(height: 8),
             Card(
               elevation: 0,
-              color: Colors.grey[100],
+              color: cardBgColor,
               child: ListTile(
                 leading: const Icon(Icons.cake, color: Colors.teal),
                 title: Text(
                   contact.birthDate!.toLocal().toString().split(' ')[0],
+                  style: TextStyle(color: cardTextColor),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+
+          if (avatarPath != null && avatarPath.isNotEmpty) ...[
+            const Text(
+              'مسیر آواتار',
+              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.teal),
+            ),
+            const SizedBox(height: 8),
+            Card(
+              elevation: 0,
+              color: cardBgColor,
+              child: ListTile(
+                leading: const Icon(Icons.image, color: Colors.teal),
+                title: SelectableText(
+                  avatarPath,
+                  style: TextStyle(fontSize: 13, color: subtleTextColor),
                 ),
               ),
             ),
@@ -294,8 +397,8 @@ class ContactDetailScreen extends StatelessWidget {
                   .map(
                     (tag) => Chip(
                       label: Text(tag),
-                      backgroundColor: Colors.blue.shade50,
-                      labelStyle: TextStyle(color: Colors.blue.shade800),
+                      backgroundColor: tagBgColor,
+                      labelStyle: TextStyle(color: tagTextColor),
                     ),
                   )
                   .toList(),
@@ -322,25 +425,31 @@ class ContactDetailScreen extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           if (contact.interactions.isEmpty)
-            const Text(
+            Text(
               'هنوز تعاملی ثبت نشده است.',
-              style: TextStyle(color: Colors.grey, fontSize: 13),
+              style: TextStyle(color: subtleTextColor, fontSize: 13),
             )
           else
             ...contact.interactions.map(
               (interaction) => Card(
                 elevation: 0,
-                color: Colors.teal.shade50.withValues(alpha: 0.5),
+                color: interactionBgColor,
                 child: ListTile(
                   leading: const Icon(Icons.history, color: Colors.teal),
                   title: Text(
                     interaction.type,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: cardTextColor,
+                    ),
                   ),
-                  subtitle: Text(interaction.description),
+                  subtitle: Text(
+                    interaction.description,
+                    style: TextStyle(color: subtleTextColor),
+                  ),
                   trailing: Text(
                     interaction.date.toLocal().toString().split(' ')[0],
-                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    style: TextStyle(fontSize: 12, color: subtleTextColor),
                   ),
                 ),
               ),
@@ -356,11 +465,11 @@ class ContactDetailScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.amber.shade50,
+                color: noteBgColor,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.amber.shade200),
+                border: Border.all(color: noteBorderColor),
               ),
-              child: Text(notes),
+              child: Text(notes, style: TextStyle(color: noteTextColor)),
             ),
           ],
         ],

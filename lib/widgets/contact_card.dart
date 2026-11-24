@@ -1,4 +1,5 @@
 // lib/widgets/contact_card.dart
+import 'dart:io';
 import 'package:flutter/material.dart';
 import '../models/contact_model.dart';
 
@@ -16,10 +17,32 @@ class ContactCard extends StatelessWidget {
     required this.onDelete,
   });
 
+  ImageProvider? _resolveAvatarImage() {
+    final path = contact.avatarPath;
+    if (path == null || path.isEmpty) return null;
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      return NetworkImage(path);
+    }
+    final file = File(path);
+    if (file.existsSync()) {
+      return FileImage(file);
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final borderColor = isDark ? Colors.grey.shade800 : Colors.grey.shade200;
+    final subtitleColor = isDark ? Colors.grey.shade300 : Colors.grey.shade700;
+    final avatarBgColor = isDark ? Colors.teal.shade900 : Colors.teal.shade100;
+    final avatarTextColor = isDark
+        ? Colors.teal.shade200
+        : Colors.teal.shade800;
+
     final name = (contact.name.isNotEmpty) ? contact.name : 'بدون نام';
     final firstLetter = name.isNotEmpty ? name[0] : '?';
+    final avatarImage = _resolveAvatarImage();
 
     final phone = (contact.phones.isNotEmpty && contact.phones.first.isNotEmpty)
         ? contact.phones.first
@@ -28,6 +51,7 @@ class ContactCard extends StatelessWidget {
     final subtitleText = [
       phone,
       contact.company,
+      contact.finglish,
     ].where((e) => e != null && e.isNotEmpty).join(' • ');
 
     return Card(
@@ -35,19 +59,22 @@ class ContactCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey.shade200),
+        side: BorderSide(color: borderColor),
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         leading: CircleAvatar(
-          backgroundColor: Colors.teal.shade100,
-          child: Text(
-            firstLetter,
-            style: TextStyle(
-              color: Colors.teal.shade800,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          backgroundColor: avatarBgColor,
+          backgroundImage: avatarImage,
+          child: avatarImage == null
+              ? Text(
+                  firstLetter,
+                  style: TextStyle(
+                    color: avatarTextColor,
+                    fontWeight: FontWeight.bold,
+                  ),
+                )
+              : null,
         ),
         title: Text(
           name,
@@ -57,7 +84,7 @@ class ContactCard extends StatelessWidget {
           padding: const EdgeInsets.only(top: 4.0),
           child: Text(
             subtitleText,
-            style: TextStyle(color: Colors.grey[600], fontSize: 13),
+            style: TextStyle(color: subtitleColor, fontSize: 13),
           ),
         ),
         trailing: Row(

@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.4.2] - 2026-11-24
+
+### Added
+- Support for `Finglish` (`finglish`) and `Avatarpath` (`avatarPath`) fields across `ContactModel`, `ContactDetailScreen`, `ContactFormSheet`, and `ContactCard`.
+- Search filtering by `finglish` in `ContactsListScreen` and `ContactsScreen`.
+- Dedicated display for location URLs, avatar paths, and birth dates in `ContactDetailScreen`.
+
+### Changed
+- Expanded predefined group options in `ContactFormSheet` (`تست`, `مشاوران`, `مشتریان`, `زیرساخت`) and preserved existing custom groups during edits.
+- Organized the `http` dependency under networking in `pubspec.yaml` and updated `VERSION`.
+- Updated `test/widget_test.dart` to test `DaftarcheApp` using `dotenv.loadFromString`.
+
+### Fixed
+- Fixed low-contrast and illegible text on light/tinted surfaces in dark mode across contact detail cards, chips, notes, stats, and search fields.
+- Handled plain-text legacy `Interactions` strings gracefully when deserializing records in `ContactModel.fromMap`.
+
 ## [0.4.0] - 2026-11-16
 
 ### Added

@@ -38,22 +38,25 @@ class _ContactsScreenState extends State<ContactsScreen> {
   }
 
   Future<void> _loadContacts() async {
+    if (!mounted) return;
     setState(() => _isLoading = true);
     try {
       final contacts = await _contactService.fetchContacts();
+      if (!mounted) return;
       setState(() {
         _contacts = contacts;
         _filterContacts();
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() => _isLoading = false);
       _showSnackBar(e.toString());
     }
   }
 
   void _filterContacts() {
-    final query = _searchController.text.toLowerCase();
+    final query = _searchController.text.trim().toLowerCase();
     setState(() {
       _filteredContacts = _contacts.where((contact) {
         if (_showFavoritesOnly && !contact.isFavorite) return false;
@@ -62,12 +65,16 @@ class _ContactsScreenState extends State<ContactsScreen> {
           if (contact.group != _selectedGroupFilter) return false;
         }
 
+        if (query.isEmpty) return true;
+
         final nameMatch = contact.name.toLowerCase().contains(query);
+        final finglishMatch =
+            contact.finglish?.toLowerCase().contains(query) ?? false;
         final companyMatch =
             contact.company?.toLowerCase().contains(query) ?? false;
         final phoneMatch = contact.phones.any((p) => p.contains(query));
 
-        return nameMatch || companyMatch || phoneMatch;
+        return nameMatch || finglishMatch || companyMatch || phoneMatch;
       }).toList();
     });
   }
@@ -81,7 +88,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
         await _contactService.updateContact(contact);
         _showSnackBar('مخاطب به‌روزرسانی شد.');
       }
-      _loadContacts();
+      await _loadContacts();
     } catch (e) {
       _showSnackBar(e.toString());
     }
@@ -90,7 +97,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
   Future<void> _handleDeleteContact(String recordId) async {
     try {
       await _contactService.deleteContact(recordId);
-      _loadContacts();
+      await _loadContacts();
       _showSnackBar('مخاطب حذف شد.');
     } catch (e) {
       _showSnackBar(e.toString());
@@ -101,7 +108,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
     final updated = contact.copyWith(isFavorite: !contact.isFavorite);
     try {
       await _contactService.updateContact(updated);
-      _loadContacts();
+      await _loadContacts();
     } catch (e) {
       _showSnackBar(e.toString());
     }
@@ -109,11 +116,13 @@ class _ContactsScreenState extends State<ContactsScreen> {
 
   Future<void> _mergeDuplicates() async {
     try {
+      if (!mounted) return;
       setState(() => _isLoading = true);
       final count = await _contactService.mergeDuplicates();
       await _loadContacts();
       _showSnackBar('$count مخاطب تکراری با موفقیت ادغام شدند.');
     } catch (e) {
+      if (!mounted) return;
       setState(() => _isLoading = false);
       _showSnackBar(e.toString());
     }
@@ -169,11 +178,13 @@ class _ContactsScreenState extends State<ContactsScreen> {
               Navigator.pop(context);
               if (controller.text.isNotEmpty) {
                 try {
+                  if (!mounted) return;
                   setState(() => _isLoading = true);
                   await _contactService.importBackup(controller.text);
                   await _loadContacts();
                   _showSnackBar('پشتیبان با موفقیت بازگردانی شد.');
                 } catch (e) {
+                  if (!mounted) return;
                   setState(() => _isLoading = false);
                   _showSnackBar(e.toString());
                 }
@@ -187,6 +198,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
   }
 
   void _showSnackBar(String message) {
+    if (!mounted) return;
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
@@ -258,7 +270,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'جستجو بر اساس نام، شرکت یا شماره...',
+                hintText: 'جستجو بر اساس نام، فینگلیش، شرکت یا شماره...',
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
@@ -273,7 +285,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 filled: true,
-                fillColor: Colors.grey[100],
+                fillColor: Theme.of(context).cardColor,
               ),
             ),
           ),
@@ -331,6 +343,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
                           [
                             phone,
                             contact.company,
+                            contact.finglish,
                           ].where((e) => e != null && e.isNotEmpty).join(' • '),
                         ),
                         trailing: Row(

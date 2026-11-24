@@ -38,6 +38,8 @@ class InteractionModel {
 class ContactModel {
   final String id;
   final String name;
+  final String? finglish;
+  final String? avatarPath;
   final List<String> phones;
   final List<String> emails;
   final String? company;
@@ -54,6 +56,8 @@ class ContactModel {
   ContactModel({
     required this.id,
     required this.name,
+    this.finglish,
+    this.avatarPath,
     required this.phones,
     this.emails = const [],
     this.company,
@@ -71,6 +75,8 @@ class ContactModel {
   Map<String, dynamic> toMap() {
     return {
       'Name': name,
+      'Finglish': finglish ?? '',
+      'Avatarpath': avatarPath ?? '',
       'Phones': phones.join(','),
       'Emails': emails.join(','),
       'Company': company ?? '',
@@ -91,9 +97,20 @@ class ContactModel {
       return map.containsKey(pascalKey) ? map[pascalKey] : map[camelKey];
     }
 
+    String? parseNullableString(dynamic val) {
+      if (val == null) return null;
+      final str = val.toString().trim();
+      return str.isEmpty ? null : str;
+    }
+
     List<String> parseStringToList(dynamic val) {
       if (val == null) return [];
-      if (val is List) return val.map((e) => e.toString()).toList();
+      if (val is List) {
+        return val
+            .map((e) => e.toString().trim())
+            .where((e) => e.isNotEmpty)
+            .toList();
+      }
       if (val is String && val.isNotEmpty) {
         return val
             .split(',')
@@ -113,18 +130,40 @@ class ContactModel {
 
     List<InteractionModel> parseInteractions(dynamic val) {
       if (val == null) return [];
-      try {
-        final decoded = val is String ? jsonDecode(val) : val;
-        if (decoded is List) {
-          return decoded
-              .whereType()
-              .map(
-                (item) =>
-                    InteractionModel.fromMap(Map<String, dynamic>.from(item)),
-              )
-              .toList();
+      if (val is List) {
+        return val
+            .whereType()
+            .map(
+              (item) =>
+                  InteractionModel.fromMap(Map<String, dynamic>.from(item)),
+            )
+            .toList();
+      }
+      if (val is String) {
+        final trimmed = val.trim();
+        if (trimmed.isEmpty || trimmed == '[]') return [];
+        try {
+          final decoded = jsonDecode(trimmed);
+          if (decoded is List) {
+            return decoded
+                .whereType()
+                .map(
+                  (item) =>
+                      InteractionModel.fromMap(Map<String, dynamic>.from(item)),
+                )
+                .toList();
+          }
+        } catch (_) {
+          return [
+            InteractionModel(
+              id: '${id}_legacy_0',
+              date: DateTime.now(),
+              type: 'تعامل',
+              description: trimmed,
+            ),
+          ];
         }
-      } catch (_) {}
+      }
       return [];
     }
 
@@ -133,18 +172,20 @@ class ContactModel {
     return ContactModel(
       id: id,
       name: readField('Name', 'name')?.toString() ?? '',
+      finglish: parseNullableString(readField('Finglish', 'finglish')),
+      avatarPath: parseNullableString(readField('Avatarpath', 'avatarPath')),
       phones: parseStringToList(readField('Phones', 'phones')),
       emails: parseStringToList(readField('Emails', 'emails')),
-      company: readField('Company', 'company')?.toString(),
-      jobTitle: readField('Jobtitle', 'jobTitle')?.toString(),
-      address: readField('Address', 'address')?.toString(),
-      locationUrl: readField('Locationurl', 'locationUrl')?.toString(),
+      company: parseNullableString(readField('Company', 'company')),
+      jobTitle: parseNullableString(readField('Jobtitle', 'jobTitle')),
+      address: parseNullableString(readField('Address', 'address')),
+      locationUrl: parseNullableString(readField('Locationurl', 'locationUrl')),
       birthDate: rawBirthDate != null && rawBirthDate.toString().isNotEmpty
           ? DateTime.tryParse(rawBirthDate.toString())
           : null,
-      group: readField('Group', 'group')?.toString(),
+      group: parseNullableString(readField('Group', 'group')),
       tags: parseStringToList(readField('Tags', 'tags')),
-      notes: readField('Notes', 'notes')?.toString(),
+      notes: parseNullableString(readField('Notes', 'notes')),
       isFavorite: parseBool(readField('Isfavorite', 'isFavorite')),
       interactions: parseInteractions(
         readField('Interactions', 'interactions'),
@@ -155,6 +196,8 @@ class ContactModel {
   ContactModel copyWith({
     String? id,
     String? name,
+    String? finglish,
+    String? avatarPath,
     List<String>? phones,
     List<String>? emails,
     String? company,
@@ -171,6 +214,8 @@ class ContactModel {
     return ContactModel(
       id: id ?? this.id,
       name: name ?? this.name,
+      finglish: finglish ?? this.finglish,
+      avatarPath: avatarPath ?? this.avatarPath,
       phones: phones ?? this.phones,
       emails: emails ?? this.emails,
       company: company ?? this.company,
