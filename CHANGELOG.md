@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.4.3] - 2026-11-28
+
+### Added
+- Added `CONTRIBUTING.md` with contribution guidelines, local setup instructions, branch workflow, and code quality standards.
+
+### Changed
+- Updated `README.md` with standardized English documentation covering key features, privacy principles, and network insights.
+- Updated `.github/workflows/release.yml` to automate Dart static analysis, formatting checks, testing, and multi-platform release builds.
+- Bumped project version to `0.4.3` in `VERSION` and `pubspec.yaml`.
+
 ## [0.4.2] - 2026-11-24
 
 ### Added
